@@ -11,7 +11,8 @@ import {
   XCircle,
   Image as ImageIcon,
   Upload,
-  Plus
+  Plus,
+  Users
 } from 'lucide-react';
 
 // Sample artwork data
