@@ -90,6 +90,7 @@ const MainFeature = ({ activeTab }) => {
   const [artworks, setArtworks] = useState(initialArtworks);
   const [selectedArtwork, setSelectedArtwork] = useState(null);
   const [isAddingArtwork, setIsAddingArtwork] = useState(false);
+  const [isEditingArtwork, setIsEditingArtwork] = useState(false);
   const [newArtwork, setNewArtwork] = useState({
     title: "",
     artist: "",
@@ -104,9 +105,10 @@ const MainFeature = ({ activeTab }) => {
     description: "",
     tags: []
   });
+  const [editingArtwork, setEditingArtwork] = useState(null);
   const [tagInput, setTagInput] = useState("");
 
-  // Handle form input changes
+  // Handle form input changes for new artwork
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
@@ -127,12 +129,44 @@ const MainFeature = ({ activeTab }) => {
     }
   };
 
-  // Handle tag input
+  // Handle form input changes for editing artwork
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    
+    if (name.includes('.')) {
+      const [parent, child] = name.split('.');
+      setEditingArtwork({
+        ...editingArtwork,
+        [parent]: {
+          ...editingArtwork[parent],
+          [child]: value
+        }
+      });
+    } else {
+      setEditingArtwork({
+        ...editingArtwork,
+        [name]: value
+      });
+    }
+  };
+
+  // Handle tag input for new artwork
   const handleAddTag = () => {
     if (tagInput.trim() && !newArtwork.tags.includes(tagInput.trim())) {
       setNewArtwork({
         ...newArtwork,
         tags: [...newArtwork.tags, tagInput.trim()]
+      });
+      setTagInput("");
+    }
+  };
+
+  // Handle tag input for editing artwork
+  const handleAddEditTag = () => {
+    if (tagInput.trim() && !editingArtwork.tags.includes(tagInput.trim())) {
+      setEditingArtwork({
+        ...editingArtwork,
+        tags: [...editingArtwork.tags, tagInput.trim()]
       });
       setTagInput("");
     }
@@ -145,7 +179,14 @@ const MainFeature = ({ activeTab }) => {
     });
   };
 
-  // Handle form submission
+  const handleRemoveEditTag = (tagToRemove) => {
+    setEditingArtwork({
+      ...editingArtwork,
+      tags: editingArtwork.tags.filter(tag => tag !== tagToRemove)
+    });
+  };
+
+  // Handle form submission for new artwork
   const handleSubmit = (e) => {
     e.preventDefault();
     
@@ -174,6 +215,26 @@ const MainFeature = ({ activeTab }) => {
       description: "",
       tags: []
     });
+  };
+
+  // Set up artwork for editing
+  const handleEditArtwork = (artwork) => {
+    setEditingArtwork({ ...artwork });
+    setIsEditingArtwork(true);
+    setSelectedArtwork(null);
+  };
+
+  // Handle form submission for updating artwork
+  const handleUpdateArtwork = (e) => {
+    e.preventDefault();
+    
+    const updatedArtworks = artworks.map(artwork => 
+      artwork.id === editingArtwork.id ? { ...editingArtwork } : artwork
+    );
+    
+    setArtworks(updatedArtworks);
+    setIsEditingArtwork(false);
+    setEditingArtwork(null);
   };
 
   // Handle artwork deletion
@@ -474,6 +535,261 @@ const MainFeature = ({ activeTab }) => {
               </div>
             </form>
           </motion.div>
+        ) : isEditingArtwork ? (
+          <motion.div
+            key="edit-artwork-form"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="card p-6"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold">Edit Artwork</h2>
+              <button 
+                onClick={() => setIsEditingArtwork(false)}
+                className="p-2 rounded-full hover:bg-surface-100 dark:hover:bg-surface-700"
+              >
+                <XCircle className="h-5 w-5 text-surface-500" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateArtwork}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  {/* Basic Information */}
+                  <div>
+                    <label htmlFor="edit-title" className="label">Artwork Title*</label>
+                    <input
+                      type="text"
+                      id="edit-title"
+                      name="title"
+                      value={editingArtwork?.title || ""}
+                      onChange={handleEditInputChange}
+                      className="input"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="edit-artist" className="label">Artist Name*</label>
+                    <input
+                      type="text"
+                      id="edit-artist"
+                      name="artist"
+                      value={editingArtwork?.artist || ""}
+                      onChange={handleEditInputChange}
+                      className="input"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="edit-medium" className="label">Medium</label>
+                    <input
+                      type="text"
+                      id="edit-medium"
+                      name="medium"
+                      value={editingArtwork?.medium || ""}
+                      onChange={handleEditInputChange}
+                      className="input"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label htmlFor="edit-dimensions.width" className="label">Width (in)</label>
+                      <input
+                        type="number"
+                        id="edit-dimensions.width"
+                        name="dimensions.width"
+                        value={editingArtwork?.dimensions?.width || 0}
+                        onChange={handleEditInputChange}
+                        className="input"
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-dimensions.height" className="label">Height (in)</label>
+                      <input
+                        type="number"
+                        id="edit-dimensions.height"
+                        name="dimensions.height"
+                        value={editingArtwork?.dimensions?.height || 0}
+                        onChange={handleEditInputChange}
+                        className="input"
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-dimensions.depth" className="label">Depth (in)</label>
+                      <input
+                        type="number"
+                        id="edit-dimensions.depth"
+                        name="dimensions.depth"
+                        value={editingArtwork?.dimensions?.depth || 0}
+                        onChange={handleEditInputChange}
+                        className="input"
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="edit-price" className="label">Price ($)*</label>
+                    <input
+                      type="number"
+                      id="edit-price"
+                      name="price"
+                      value={editingArtwork?.price || 0}
+                      onChange={handleEditInputChange}
+                      className="input"
+                      min="0"
+                      step="0.01"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="edit-status" className="label">Status</label>
+                    <select
+                      id="edit-status"
+                      name="status"
+                      value={editingArtwork?.status || "available"}
+                      onChange={handleEditInputChange}
+                      className="input"
+                    >
+                      {statusOptions.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="edit-dateCreated" className="label">Date Created</label>
+                      <input
+                        type="date"
+                        id="edit-dateCreated"
+                        name="dateCreated"
+                        value={editingArtwork?.dateCreated || ""}
+                        onChange={handleEditInputChange}
+                        className="input"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="edit-dateAcquired" className="label">Date Acquired</label>
+                      <input
+                        type="date"
+                        id="edit-dateAcquired"
+                        name="dateAcquired"
+                        value={editingArtwork?.dateAcquired || ""}
+                        onChange={handleEditInputChange}
+                        className="input"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="edit-location" className="label">Location</label>
+                    <input
+                      type="text"
+                      id="edit-location"
+                      name="location"
+                      value={editingArtwork?.location || ""}
+                      onChange={handleEditInputChange}
+                      className="input"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="edit-image" className="label">Image URL</label>
+                    <input
+                      type="text"
+                      id="edit-image"
+                      name="image"
+                      value={editingArtwork?.image || ""}
+                      onChange={handleEditInputChange}
+                      className="input"
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="edit-description" className="label">Description</label>
+                    <textarea
+                      id="edit-description"
+                      name="description"
+                      value={editingArtwork?.description || ""}
+                      onChange={handleEditInputChange}
+                      className="input min-h-[80px]"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Tags */}
+              <div className="mt-6">
+                <label className="label">Tags</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {editingArtwork?.tags?.map(tag => (
+                    <span 
+                      key={tag} 
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-200 dark:bg-surface-700"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveEditTag(tag)}
+                        className="ml-1.5 text-surface-500 hover:text-surface-700 dark:hover:text-surface-300"
+                      >
+                        &times;
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex">
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddEditTag())}
+                    className="input rounded-r-none"
+                    placeholder="Add a tag"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddEditTag}
+                    className="px-4 bg-surface-200 dark:bg-surface-700 border border-surface-300 dark:border-surface-600 border-l-0 rounded-r-lg hover:bg-surface-300 dark:hover:bg-surface-600 transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="mt-8 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsEditingArtwork(false)}
+                  className="btn btn-outline"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                >
+                  Update Artwork
+                </button>
+              </div>
+            </form>
+          </motion.div>
         ) : selectedArtwork ? (
           <motion.div
             key="artwork-detail"
@@ -557,7 +873,10 @@ const MainFeature = ({ activeTab }) => {
                 </div>
                 
                 <div className="flex justify-end gap-3">
-                  <button className="btn btn-outline flex items-center gap-2">
+                  <button 
+                    onClick={() => handleEditArtwork(selectedArtwork)}
+                    className="btn btn-outline flex items-center gap-2"
+                  >
                     <Edit className="h-4 w-4" />
                     <span>Edit</span>
                   </button>
@@ -619,7 +938,13 @@ const MainFeature = ({ activeTab }) => {
                         <Eye className="h-4 w-4" />
                       </button>
                       <div className="flex gap-2">
-                        <button className="p-2 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/40 transition-colors">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditArtwork(artwork);
+                          }}
+                          className="p-2 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/40 transition-colors"
+                        >
                           <Edit className="h-4 w-4" />
                         </button>
                         <button 
